@@ -12,6 +12,12 @@ namespace EnmanuelGomez_AP1_P2
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
 
+
+
+
+
+
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

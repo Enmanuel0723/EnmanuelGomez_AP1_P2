@@ -1,0 +1,179 @@
+﻿﻿
+@page "/Combo/Edit/{ComboId:int}"
+
+@inject ComboService combosService
+@inject CombosDetallesService combosDetallesService
+@inject ArticulosService articuloServices
+@inject NavigationManager navigationManager
+
+<PageTitle>Edit</PageTitle>
+<EditForm Model="Combo" OnValidSubmit="Modificar"> FormName = "Combo"
+    <DataAnnotationsValidator />
+
+     <div class="container">
+        <div class="card shadow-lg">
+            <div class="card-header text-center">
+                <h5 class="card-title">Editar Combo</h5>
+            </div>
+
+         <div class="card-body">
+
+                @* ComboId *@
+                <div class="mb-3">
+                    <label class="form-label"><strong>ComboId</strong></label>
+                    <InputNumber class="form-control" @bind-Value="Combo.ComboId" readonly></InputNumber>
+                </div>
+
+                @* Descripcion *@
+            <div class="mb-3">
+                <label for="Descripcion" class="form-label">Descripcion:</label>
+                <InputText @bind-Value="Combo.Descripcion" class="form-control" />
+            </div>
+
+                @* Fecha *@
+                <div class="mb-3">
+                    <label class="form-label"><strong>Fecha</strong></label>
+                    <InputDate class="form-control" @bind-Value="Combo.Fecha"></InputDate>
+                </div>
+
+             @* Detalles de los articulos *@
+                <div class="border border-success p-3 mt-3">
+                    <h5>Detalles de los combos</h5>
+
+                    <ArticulosPicker Articulos="ListaArticulos"
+                                     ArticuloId="DetalleSeleccionado.ArticuloId"
+                                     Cantidad="DetalleSeleccionado.Cantidad"
+                                     Precio="DetalleSeleccionado.Precio"
+                                     OnArticuloSelected="HandleArticuloSelected" />
+                    <hr />
+                    <table class="table table-light">
+                        <thead class="table table-striped">
+                            <tr class="Text-center">
+                                <td>Articulo</td>
+                                <td>Cantidad</td>
+                                <td>Precio Total</td>
+                                <td>Remover</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var combo in Combo.CombosDetalle)
+                            {
+                                <tr>
+                                    <td>@combo.ArticuloId</td>
+                                    <td>@combo.Cantidad</td>
+                                    <td>@combo.Precio</td>
+                                    <td>
+                                        <button type="button" class="btn btn-outline-danger bi bi-trash"
+                                                @onclick="() => RemoverDetalle(combo)"></button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <hr />
+                </div>
+
+
+                @* Monto Total *@
+                <div class="row">
+                    <div class="col-6 offset-6">
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Monto Total a Pagar</strong></label>
+                            <label class="form-control text-end"><strong>@MontoTotal</strong></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* footer *@
+            <div class="card-footer text-center mt-2">
+                <a href="/Combo/Index" class="btn btn-secondary"> <span class="bi bi-arrow-left"></span> Volver</a>
+                <button type="submit" class="btn btn-primary bi bi-floppy"> Guardar</button>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+
+@code {
+    [Parameter]
+    public int ComboId { get; set; }
+
+    private Combos Combo = new Combos();
+    public CombosDetalles DetalleSeleccionado { get; set; } = new();
+    public List<ArticulosCombos> ListaArticulos { get; set; } = new();
+
+
+    public string Mensaje = string.Empty;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        Combo = await combosService.Buscar(ComboId);
+        Combo.Fecha = DateTime.Today;
+        ListaArticulos = await articuloServices.Listar(a => true);
+
+    }
+
+
+    private async Task HandleArticuloSelected((ArticulosCombos articulos, int cantidad, double precio) selection)
+    {
+        double precioTotal = selection.cantidad * selection.articulos.Precio;
+
+        var detalle = new CombosDetalles
+            {
+                ArticuloId = selection.articulos.ArticuloId,
+                Cantidad = selection.cantidad,
+                Precio = precioTotal
+            };
+
+        Combo.CombosDetalle.Add(detalle);
+
+        DetalleSeleccionado = new CombosDetalles();
+        await Task.CompletedTask;
+    }
+    public double MontoTotal => Combo.CombosDetalle.Sum(d => d.Precio);
+
+    public async Task Buscar()
+    {
+        var comboEncontrado = await combosService.Buscar(Combo.ComboId);
+
+        if (comboEncontrado != null)
+        {
+            Combo = comboEncontrado;
+        }
+    }
+
+    public async Task Modificar()
+    {
+        Combo.Precio = MontoTotal;
+        var modifico = await combosService.Modificar(Combo);
+
+        if (modifico)
+        {
+            foreach (var detalle in Combo.CombosDetalle)
+            {
+                var articulo = await articuloServices.Buscar (detalle.ArticuloId);
+
+                if (articulo != null)
+                {
+                    articulo.Existencia -= detalle.Cantidad;
+                    if (articulo.Existencia < 0)
+                    {
+                        articulo.Existencia = 0;
+                    }
+
+                    await articuloServices.Actualizar(articulo.ArticuloId);
+                }
+            }
+            navigationManager.NavigateTo("/Combo/Index");
+        }
+    }
+
+    public void RemoverDetalle(CombosDetalles detalle)
+    {
+        Combo.CombosDetalle.Remove(detalle);
+        DetalleSeleccionado = detalle;
+    }
+
+}

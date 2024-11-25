@@ -1,0 +1,117 @@
+﻿
+@page "/Combos/Index"
+@inject ComboService CombosService
+@inject CombosDetallesService CombosDetalleService
+@rendermode InteractiveServer
+
+<PageTitle>Detalles</PageTitle>
+
+<div class="container card shadow-lg">
+    <div class="card-header text-center">
+        <h3><strong>Detalle combo</strong></h3>
+    </div>
+
+  
+    <div class="row text-right">
+        <div class="col-md-3">
+            <label for="Filtro" class="form-label"><strong>Filtrar por:</strong></label>
+            <InputSelect id="filtro" class="form-select" @bind-Value="filtro">
+                <option value="" disabled>Seleccionar</option>
+                <option value="CombosId">Cliente ID</option>
+                <option value="NombreCombos">Nombre Cliente</option>
+                <option value="Edad">Edad</option>
+            </InputSelect>
+        </div>
+        <div class="col-md-6">
+            <label for="ValorFiltro" class="form-label"><strong>B&uacute;squeda</strong></label>
+            <div class="input-group">
+                <input @bind="ValorFiltro" class="form-control" placeholder="Buscar" />
+                <button @onclick="Buscar" class="btn btn-success" type="button">
+                    <span class="bi bi-search"></span> Buscar
+                </button>
+            </div>
+        </div>
+        <div class="col-md-3 d-flex align-items-end justify-content-md-end mt-3 mt-md-0">
+            <a href="/Combos/Create" class="btn btn-success bi bi-plus-square-fill"> Crear</a>
+        </div>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead class="table table-striped text-center table-bordered mt-3">
+                <tr>
+                    <th>Combo ID</th>
+                    <th>Fecha</th>
+                    <th>Descripcion</th>
+                    <th>Precio</th>
+                    <th>Vendido</th>
+                    <th>Editar</th>
+                    <th>Eliminar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var Combos in combos)
+                {
+                    <tr>
+                        <td class="text-center">@Combos.ComboId</td>
+                        <td class="text-center">@Combos.Fecha</td>
+                        <td class="text-center">@Combos.Descripcion</td>
+                        <td class="text-center">@Combos.Vendido</td>
+                        <td class="text-center">@Combos.Precio</td>
+                        <td class="text-center">
+                            <a href="Combos/Details/@Combos.ComboId" class="btn btn-outline-info bi bi-eye-fill"></a>
+                            </td>
+
+                        <td class="text-center">
+                            <a href="/Combos/Edit/@Combos.ComboId" class="btn btn-outline-warning bi bi-pencil-square"></a>
+                        </td>
+
+                        <td class="text-center">
+                            <a href="/Combos/Delete/@Combos.ComboId" class="btn btn-outline-danger bi bi-trash"></a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="card-footer">
+            <p><strong>Total de Combos: </strong>@combos?.Count</p>
+        </div>
+    </div>
+</div>
+
+@code {
+   public List<Combos> combos { get; set; } = new List<Combos>();
+    public List<CombosDetalles> ComboDetallesList { get; set; } = new List<CombosDetalles>();
+    public string filtro { get; set; } = string.Empty;
+    public string ValorFiltro { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        combos = await CombosService.Listar(c => c.ComboId > 0);
+    }
+
+    public async Task Buscar()
+    {
+        if (!string.IsNullOrEmpty(filtro) && !string.IsNullOrEmpty(ValorFiltro))
+        {
+            switch (filtro)
+            {
+                case "Combo":
+                    if (int.TryParse(ValorFiltro, out int id))
+                    {
+                        combos = combos.Where(c => c.ComboId == id).ToList();
+                    }
+                    break;
+
+                case "Descrpcion":
+                    combos = combos.Where(c => c.Descripcion.Contains(ValorFiltro, StringComparison.OrdinalIgnoreCase)).ToList();
+                    break;
+
+               
+            }
+        }
+        
+           
+    }
+}

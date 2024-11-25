@@ -17,9 +17,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Components\Model\" />
-    <Folder Include="Components\DAL\" />
-  </ItemGroup>
-
 </Project>

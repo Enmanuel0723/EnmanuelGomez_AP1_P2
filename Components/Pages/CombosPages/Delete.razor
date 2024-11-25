@@ -1,0 +1,93 @@
+﻿
+@page "/Combo/Delete/{ComboId:int}"
+@inject ComboService combosService
+@inject NavigationManager navigationManager
+
+@rendermode InteractiveServer
+
+<PageTitle>Eliminar Combo</PageTitle>
+
+@if (Combo != null)
+{
+    <div class="container">
+        <div class="card shadow-header">
+            <!-- Header -->
+            <div class="card-header bg-primary text-white text-center py-2 rounded">
+                <h3><strong>Eliminar Combo</strong></h3>
+            </div>
+            <div class="card-header">
+                <h3 class="text-danger">¿Estás seguro de que quieres eliminar este Combo?</h3>
+            </div>
+            <!-- Body -->
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card shadow-lg">
+                            <div class="card-header">
+                                <h3 class="text-center"><strong>Datos de los Combos</strong></h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="border-primary border-2 borde">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <ul class="list-unstyled">
+                                                    <li><strong>ComboId:</strong> @Combo.ComboId</li>
+                                                    <li><strong>Fecha:</strong> @Combo.Fecha.ToShortDateString()</li>
+                                                    <li><strong>Descripcion:</strong> @Combo.Descripcion</li>
+                                                    <li><strong>Monto:</strong> @Combo.Precio</li>
+                                                    <li><strong>Vendido:</strong> @Combo.Vendido</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Footer -->
+            <div class="card-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-danger" @onclick="Eliminar">
+                    <i class="bi bi-trash-fill"></i> Eliminar
+                </button>
+                <a class="btn btn-outline-primary" href="/Combo/Index">
+                    <i class="bi bi-box-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <p>Combo no encontrado.</p>
+}
+
+@code {
+    [Parameter]
+    public int ComboId { get; set; }
+    public Combos? Combo { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ComboId != 0)
+        {
+            Combo = await combosService.Buscar(ComboId);
+        }
+    }
+
+    public async Task Eliminar()
+    {
+        if (ComboId == 0 || Combo == null)
+        {
+            return;
+        }
+
+        if (await combosService.Eliminar(ComboId))
+        {
+            navigationManager.NavigateTo("/Combo/Index");
+        }
+    }
+
+}
